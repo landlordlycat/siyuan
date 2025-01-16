@@ -1,4 +1,4 @@
-// SiYuan - Build Your Eternal Digital Garden
+// SiYuan - Refactor your thinking
 // Copyright (c) 2020-present, b3log.org
 //
 // This program is free software: you can redistribute it and/or modify
@@ -59,17 +59,19 @@ func getGraph(c *gin.Context) {
 		return
 	}
 
-	query := arg["k"].(string)
+	reqId := arg["reqId"]
+	ret.Data = map[string]interface{}{"reqId": reqId}
 
+	query := arg["k"].(string)
 	graphConf, err := gulu.JSON.MarshalJSON(arg["conf"])
-	if nil != err {
+	if err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
 	}
 
 	global := conf.NewGlobalGraph()
-	if err = gulu.JSON.UnmarshalJSON(graphConf, global); nil != err {
+	if err = gulu.JSON.UnmarshalJSON(graphConf, global); err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
@@ -98,18 +100,24 @@ func getLocalGraph(c *gin.Context) {
 		return
 	}
 
+	reqId := arg["reqId"]
+	ret.Data = map[string]interface{}{"reqId": reqId}
+	if nil == arg["id"] {
+		return
+	}
+
 	keyword := arg["k"].(string)
 	id := arg["id"].(string)
 
 	graphConf, err := gulu.JSON.MarshalJSON(arg["conf"])
-	if nil != err {
+	if err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
 	}
 
 	local := conf.NewLocalGraph()
-	if err = gulu.JSON.UnmarshalJSON(graphConf, local); nil != err {
+	if err = gulu.JSON.UnmarshalJSON(graphConf, local); err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		return
