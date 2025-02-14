@@ -1,4 +1,4 @@
-// SiYuan - Build Your Eternal Digital Garden
+// SiYuan - Refactor your thinking
 // Copyright (c) 2020-present, b3log.org
 //
 // This program is free software: you can redistribute it and/or modify
@@ -32,6 +32,24 @@ func getBookmark(c *gin.Context) {
 	ret.Data = model.BuildBookmark()
 }
 
+func removeBookmark(c *gin.Context) {
+	ret := gulu.Ret.NewResult()
+	defer c.JSON(http.StatusOK, ret)
+
+	arg, ok := util.JsonArg(c, ret)
+	if !ok {
+		return
+	}
+
+	bookmark := arg["bookmark"].(string)
+	if err := model.RemoveBookmark(bookmark); err != nil {
+		ret.Code = -1
+		ret.Msg = err.Error()
+		ret.Data = map[string]interface{}{"closeTimeout": 5000}
+		return
+	}
+}
+
 func renameBookmark(c *gin.Context) {
 	ret := gulu.Ret.NewResult()
 	defer c.JSON(http.StatusOK, ret)
@@ -43,7 +61,7 @@ func renameBookmark(c *gin.Context) {
 
 	oldBookmark := arg["oldBookmark"].(string)
 	newBookmark := arg["newBookmark"].(string)
-	if err := model.RenameBookmark(oldBookmark, newBookmark); nil != err {
+	if err := model.RenameBookmark(oldBookmark, newBookmark); err != nil {
 		ret.Code = -1
 		ret.Msg = err.Error()
 		ret.Data = map[string]interface{}{"closeTimeout": 5000}

@@ -1,4 +1,4 @@
-// SiYuan - Build Your Eternal Digital Garden
+// SiYuan - Refactor your thinking
 // Copyright (c) 2020-present, b3log.org
 //
 // This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ func MoveFoldHeading(updateNode, oldNode *ast.Node) {
 		}
 
 		if ast.NodeHeading == n.Type && "1" == n.IALAttr("fold") {
-			children := FoldedHeadingChildren(n)
+			children := HeadingChildren(n)
 			foldHeadings[n.ID] = children
 		}
 		return ast.WalkContinue
@@ -50,24 +50,36 @@ func MoveFoldHeading(updateNode, oldNode *ast.Node) {
 	})
 	for _, h := range updateFoldHeadings {
 		children := foldHeadings[h.ID]
-		for _, c := range children {
-			h.Next.InsertAfter(c) // Next 是 Block IAL
+		for i := len(children) - 1; 0 <= i; i-- {
+			h.Next.InsertAfter(children[i]) // Next 是 Block IAL
 		}
 	}
 	return
 }
 
-func FoldedHeadingChildren(heading *ast.Node) (ret []*ast.Node) {
-	children := HeadingChildren(heading)
-	if 1 > len(children) {
-		return
+func IsInFoldedHeading(node, currentHeading *ast.Node) bool {
+	if nil == node {
+		return false
 	}
 
-	for _, c := range children {
-		if "1" == c.IALAttr("heading-fold") {
-			ret = append(ret, c)
-		} else {
-			break
+	heading := HeadingParent(node)
+	if nil == heading {
+		return false
+	}
+	if "1" == heading.IALAttr("heading-fold") || "1" == heading.IALAttr("fold") {
+		return true
+	}
+	if heading == currentHeading {
+		// node 就在当前标题层级下的话不递归继续查询，直接返回不折叠
+		return false
+	}
+	return IsInFoldedHeading(heading, currentHeading)
+}
+
+func GetHeadingFold(nodes []*ast.Node) (ret []*ast.Node) {
+	for _, n := range nodes {
+		if "1" == n.IALAttr("heading-fold") {
+			ret = append(ret, n)
 		}
 	}
 	return
@@ -88,32 +100,16 @@ func HeadingChildren(heading *ast.Node) (ret []*ast.Node) {
 			if currentLevel >= n.HeadingLevel {
 				break
 			}
-		} else if ast.NodeSuperBlock == n.Type {
-			if h := SuperBlockHeading(n); nil != h {
-				if currentLevel >= h.HeadingLevel {
-					break
-				}
-			}
-		} else if ast.NodeSuperBlockCloseMarker == n.Type {
-			continue
 		}
 		ret = append(ret, n)
 	}
 	return
 }
 
-func SuperBlockHeading(sb *ast.Node) *ast.Node {
-	c := sb.FirstChild.Next.Next
-	if nil == c {
-		return nil
-	}
-
-	if ast.NodeHeading == c.Type {
-		return c
-	}
-
-	if ast.NodeSuperBlock == c.Type {
-		return SuperBlockHeading(c)
+func SuperBlockLastHeading(sb *ast.Node) *ast.Node {
+	headings := sb.ChildrenByType(ast.NodeHeading)
+	if 0 < len(headings) {
+		return headings[len(headings)-1]
 	}
 	return nil
 }
